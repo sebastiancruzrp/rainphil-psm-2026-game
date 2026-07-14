@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Petri Pursuit — Rainphil Lab ID Challenge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #0a1f1b;
+        --bg-deep: #071512;
+        --surface: #123028;
+        --surface-2: #16382e;
+        --agar: #ffd166;
+        --stain: #5eead4;
+        --stain-bright: #8bfff0;
+        --text: #eef7f2;
+        --text-dim: #9db8ae;
+        --danger-tag: #ff8f6b;
+        --radius-lg: 28px;
+        --radius-full: 999px;
+    }
+
+    * { box-sizing: border-box; }
+
+    #fullscreen-btn {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(94,234,212,0.3);
+        color: var(--stain);
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.15s ease;
+        z-index: 20;
+    }
+
+    #fullscreen-btn:hover {
+        background: rgba(94,234,212,0.12);
+    }
+
+    #fullscreen-btn:active {
+        transform: scale(0.92);
+    }
+
+    #fullscreen-btn:focus-visible {
+        outline: 2px solid var(--agar);
+        outline-offset: 2px;
+    }
+
+    html, body {
+        height: 100%;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background:
+            radial-gradient(circle at 15% 10%, rgba(94,234,212,0.07), transparent 40%),
+            radial-gradient(circle at 85% 90%, rgba(255,209,102,0.06), transparent 45%),
+            var(--bg-deep);
+        color: var(--text);
+        margin: 0;
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: clamp(10px, 2.5vh, 28px) 16px;
+        overflow-y: auto;
+    }
+
+    .stage {
+        width: 100%;
+        max-width: 640px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* ---------- Brand / logo slot ---------- */
+    .brand-row {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-bottom: clamp(8px, 1.5vh, 14px);
+    }
+
+    .logo-slot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 64px;
+        padding: 0 22px;
+        border-radius: var(--radius-full);
+        background: rgba(255,255,255,0.03);
+        border: 1px dashed rgba(255,255,255,0.18);
+    }
+
+    .logo-slot img {
+        max-height: 52px;
+        max-width: 240px;
+        object-fit: contain;
+        display: block;
+    }
+
+    .logo-slot .logo-fallback {
+        display: none;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.12em;
+        color: var(--text-dim);
+        text-transform: uppercase;
+    }
+
+    /* shown automatically if the image fails to load */
+    .logo-slot.empty {
+        border-color: rgba(255,255,255,0.25);
+    }
+    .logo-slot.empty .logo-fallback { display: block; }
+
+    /* ---------- Title block ---------- */
+    .title-block {
+        text-align: center;
+        margin-bottom: clamp(12px, 2.2vh, 22px);
+    }
+
+    .eyebrow {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.68rem;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--stain);
+        margin: 0 0 6px;
+    }
+
+    .game-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: clamp(1.8rem, 5.5vh, 2.8rem);
+        margin: 0;
+        letter-spacing: -0.01em;
+        background: linear-gradient(100deg, var(--stain-bright), var(--stain) 55%, var(--agar));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .tagline {
+        font-size: 0.92rem;
+        color: var(--text-dim);
+        margin: 8px 0 0;
+    }
+
+    /* ---------- Game card ---------- */
+    #game-container {
+        width: 100%;
+        text-align: center;
+    }
+
+    #display-box {
+        position: relative;
+        background: var(--surface);
+        border-radius: 32px;
+        padding: 10px;
+        width: clamp(260px, 58vh, 560px);
+        aspect-ratio: 4 / 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto clamp(10px, 2vh, 18px);
+        overflow: hidden;
+        box-shadow:
+            0 0 0 2px rgba(94,234,212,0.35),
+            0 0 0 8px rgba(94,234,212,0.08),
+            0 20px 40px rgba(0,0,0,0.45);
+    }
+
+    #display-box::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse 70% 40% at 25% 12%, rgba(255,255,255,0.14), transparent 70%);
+        pointer-events: none;
+    }
+
+    #display-box::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+            radial-gradient(circle, rgba(255,209,102,0.18) 2px, transparent 2.5px),
+            radial-gradient(circle, rgba(94,234,212,0.14) 3px, transparent 3.5px);
+        background-size: 90px 90px, 130px 130px;
+        background-position: 10px 20px, 60px 80px;
+        pointer-events: none;
+    }
+
+    #apparatus-image {
+        position: relative;
+        z-index: 1;
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 12px;
+    }
+
+    #placeholder-text {
+        position: relative;
+        z-index: 1;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1rem;
+        letter-spacing: 0.02em;
+        color: var(--text-dim);
+    }
+
+    #answer-box {
+        display: flex;
+        width: fit-content;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: clamp(1.15rem, 4vh, 1.7rem);
+        font-weight: 700;
+        color: var(--stain-bright);
+        min-height: 38px;
+        margin: 2px auto 12px;
+        padding: 7px 20px;
+        border-radius: var(--radius-full);
+        background: rgba(94,234,212,0.08);
+        border: 1px solid rgba(94,234,212,0.25);
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    #answer-box.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    #answer-box .tag-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--agar);
+        font-weight: 600;
+    }
+
+    #fun-fact-box {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        max-width: 480px;
+        margin: 0 auto clamp(12px, 2vh, 20px);
+        padding: 12px 18px;
+        border-radius: 16px;
+        background: rgba(255,209,102,0.08);
+        border: 1px solid rgba(255,209,102,0.25);
+        font-size: 0.86rem;
+        line-height: 1.4;
+        color: var(--text);
+        text-align: left;
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    #fun-fact-box.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    #fun-fact-box .fact-icon {
+        font-size: 1.05rem;
+        line-height: 1.3;
+        flex-shrink: 0;
+    }
+
+    #fun-fact-box .fact-label {
+        color: var(--agar);
+        font-weight: 600;
+    }
+
+    .btn {
+        background: linear-gradient(120deg, var(--stain), var(--stain-bright));
+        color: #06231d;
+        border: none;
+        padding: 13px 38px;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        border-radius: var(--radius-full);
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        box-shadow: 0 8px 24px rgba(94,234,212,0.25);
+    }
+
+    .btn:hover {
+        filter: brightness(1.08);
+        box-shadow: 0 10px 30px rgba(94,234,212,0.4);
+    }
+
+    .btn:active {
+        transform: scale(0.96);
+    }
+
+    .btn:focus-visible {
+        outline: 2px solid var(--agar);
+        outline-offset: 3px;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: default;
+        filter: none;
+        box-shadow: none;
+    }
+
+    .btn-row {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .btn-secondary {
+        display: none;
+        align-items: center;
+        gap: 7px;
+        background: linear-gradient(120deg, var(--agar), #ffe8a3);
+        color: #4a2b00;
+        border: none;
+        padding: 13px 30px;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        border-radius: var(--radius-full);
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        box-shadow: 0 8px 24px rgba(255,209,102,0.25);
+    }
+
+    .btn-secondary.visible { display: inline-flex; }
+
+    .btn-secondary:hover {
+        filter: brightness(1.06);
+        box-shadow: 0 10px 30px rgba(255,209,102,0.4);
+    }
+
+    .btn-secondary:active { transform: scale(0.96); }
+
+    .btn-secondary:focus-visible {
+        outline: 2px solid var(--stain);
+        outline-offset: 3px;
+    }
+
+    /* ---------- Prize wheel modal ---------- */
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(4,12,10,0.72);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 60;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .modal-card {
+        position: relative;
+        width: 100%;
+        max-width: 380px;
+        background: var(--surface);
+        border: 1px solid rgba(94,234,212,0.25);
+        border-radius: 28px;
+        padding: 28px 24px 24px;
+        text-align: center;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        font-size: 1.1rem;
+        cursor: pointer;
+        line-height: 1;
+        padding: 4px;
+    }
+
+    .modal-close:hover { color: var(--stain-bright); }
+
+    .modal-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 1.35rem;
+        margin: 0 0 18px;
+        color: var(--stain-bright);
+    }
+
+    .wheel-stage {
+        position: relative;
+        width: fit-content;
+        margin: 0 auto 18px;
+    }
+
+    .wheel-pointer {
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 11px solid transparent;
+        border-right: 11px solid transparent;
+        border-top: 18px solid var(--agar);
+        z-index: 2;
+        filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
+    }
+
+    #wheel-canvas {
+        display: block;
+        width: min(70vw, 260px);
+        height: min(70vw, 260px);
+        border-radius: 50%;
+        background: var(--surface-2);
+        box-shadow:
+            0 0 0 4px rgba(94,234,212,0.25),
+            0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    #wheel-spin-btn {
+        padding: 12px 34px;
+        font-size: 1rem;
+    }
+
+    #wheel-result {
+        min-height: 26px;
+        margin: 12px 0 2px;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--stain-bright);
+    }
+
+    .prize-editor {
+        margin-top: 16px;
+        text-align: left;
+        font-size: 0.85rem;
+    }
+
+    .prize-editor summary {
+        cursor: pointer;
+        color: var(--stain);
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    #prize-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .prize-field-row {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .prize-field-row input[type="text"] {
+        flex: 1;
+        background: var(--surface-2);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 8px;
+        padding: 7px 10px;
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.85rem;
+    }
+
+    .prize-field-row input[type="text"]:focus-visible {
+        outline: 2px solid var(--stain);
+        outline-offset: 1px;
+    }
+
+    .prize-field-row .remove-field {
+        background: none;
+        border: none;
+        color: var(--danger-tag);
+        cursor: pointer;
+        font-size: 1rem;
+        padding: 4px 6px;
+    }
+
+    .editor-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .btn-tertiary {
+        background: rgba(94,234,212,0.12);
+        color: var(--stain-bright);
+        border: 1px solid rgba(94,234,212,0.3);
+        border-radius: var(--radius-full);
+        padding: 6px 16px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .btn-tertiary:hover { background: rgba(94,234,212,0.2); }
+
+    #instructions {
+        margin-top: 10px;
+        font-size: 0.8rem;
+        color: var(--text-dim);
+    }
+
+    #instructions kbd {
+        font-family: 'JetBrains Mono', monospace;
+        background: var(--surface-2);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 6px;
+        padding: 2px 8px;
+        font-size: 0.8rem;
+    }
+
+    .paste-hint {
+        margin-top: 6px;
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        font-style: italic;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .btn, #answer-box, #fun-fact-box { transition: none; }
+    }
+
+    @media (max-height: 700px) {
+        #display-box { width: clamp(220px, 48vh, 420px); }
+        .game-title { font-size: clamp(1.6rem, 5vh, 2.2rem); }
+    }
+</style>
+</head>
+<body>
+
+<button id="fullscreen-btn" onclick="toggleFullscreen()" aria-label="Toggle fullscreen">⛶</button>
+
+<div class="stage">
+
+    <div class="brand-row">
+        <div class="logo-slot" id="logo-slot">
+            <img id="brand-logo" src="Rainphil LOGO Landscape.png" alt="Rainphil logo"
+                 onerror="this.style.display='none'; document.getElementById('logo-slot').classList.add('empty');">
+            <span class="logo-fallback">RAINPHIL LOGO HERE</span>
+        </div>
+    </div>
+
+    <header class="title-block">
+        <p class="eyebrow">Rainphil Presents</p>
+        <h1 class="game-title">Petri Pursuit</h1>
+        <p class="tagline">Spin the dish. Name the specimen. Prove you know your lab.</p>
+    </header>
+
+    <div id="game-container">
+        <div id="display-box">
+            <span id="placeholder-text">Press SPIN to load a specimen</span>
+            <img id="apparatus-image" src="" alt="Apparatus" style="display: none;">
+        </div>
+
+        <div id="answer-box"><span class="tag-label">ID:</span><span id="answer-text">???</span></div>
+
+        <div id="fun-fact-box">
+            <span class="fact-icon">🧪</span>
+            <span><span class="fact-label">Fun fact:</span> <span id="fact-text"></span></span>
+        </div>
+
+        <div class="btn-row">
+            <button id="action-btn" class="btn" onclick="handleAction()">Spin</button>
+            <button id="prize-btn" class="btn btn-secondary" onclick="openWheelModal()">🎡 Prize Wheel</button>
+        </div>
+        <div id="instructions">or press <kbd>Space</kbd></div>
+    </div>
+
+</div>
+
+<!-- ============================================================
+     PRIZE WHEEL MODAL
+============================================================= -->
+<div id="wheel-modal-overlay" class="modal-overlay" onclick="handleOverlayClick(event)">
+    <div class="modal-card">
+        <button class="modal-close" onclick="closeWheelModal()" aria-label="Close prize wheel">✕</button>
+        <h2 class="modal-title">Spin for a Prize</h2>
+
+        <div class="wheel-stage">
+            <div class="wheel-pointer"></div>
+            <canvas id="wheel-canvas" width="280" height="280"></canvas>
+        </div>
+
+        <button id="wheel-spin-btn" class="btn" onclick="spinWheel()">Spin the Wheel</button>
+        <div id="wheel-result"></div>
+
+        <details class="prize-editor">
+            <summary>Edit prize options</summary>
+            <div id="prize-fields"></div>
+            <div class="editor-actions">
+                <button type="button" class="btn-tertiary" onclick="addPrizeField()">+ Add option</button>
+                <button type="button" class="btn-tertiary" onclick="saveAndRedraw()">Save changes</button>
+            </div>
+            <div class="paste-hint">💡 Pro-Tip: Paste a multi-line list into any box to automatically split and evenly distribute choices!</div>
+        </details>
+    </div>
+</div>
+
+<script>
+   const items = [
+    { image: "BACTI-CINERATOR or INOCULATION LOOP STERILIZER.jpg", answer: "Bacti-Cinerator / Inoculation Loop Sterilizer", fact: "Rainphil carries bacti-cinerators from Biocomma for safe, flame-free loop sterilization." },
+    { image: "BIOHAZARD.jpg", answer: "Biohazard", fact: "Rainphil supplies biohazard bags from Biocomma for safe waste disposal." },
+    { image: "BIOSAFETY CABINET.webp", answer: "Biosafety Cabinet", fact: "Rainphil supplies biosafety cabinets (BSCs) from Thermo Fisher Scientific to keep samples and staff protected." },
+    { image: "BROTH CULTURE.jpg", answer: "Broth Culture", fact: "Rainphil offers dry culture media from Biocomma used to grow broth cultures like this one." },
+    { image: "CENTRIFUGE.jpeg", answer: "Centrifuge", fact: "Rainphil supplies centrifuges from Beckman Coulter for spinning down samples fast." },
+    { image: "CO2 INCUBATOR.jpeg", answer: "CO2 Incubator", fact: "Rainphil carries CO2 incubators from PHCbi to keep cell cultures at just the right temperature and gas mix." },
+    { image: "COLONY COUNTER.jpeg", answer: "Colony Counter", fact: "Rainphil's Funke Gerber colony counters can tally bacterial colonies automatically." },
+    { image: "COLONY.jpg", answer: "Colony", fact: "Rainphil's Funke Gerber colony counters make counting colonies like these fast and accurate." },
+    { image: "GRAM STAIN.jpeg", answer: "Gram Stain", fact: "Gram staining, invented in 1884, is still the very first test run in most microbiology labs today." },
+    { image: "INNOCULATING LOOP.webp", answer: "Inoculating Loop", fact: "Rainphil's Biocomma bacti-cinerators are designed to sterilize inoculating loops like this between uses." },
+    { image: "MEMBRANE FILTER.jpeg", answer: "Membrane Filter", fact: "Membrane filters can trap particles as small as 0.2 microns — small enough to remove most bacteria from a liquid." },
+    { image: "MICROSCOPE.jpeg", answer: "Microscope", fact: "The first compound microscope was built in the 1590s — over 400 years before today's digital lab scopes." },
+    { image: "PERSONAL PROTECTIVE EQUIPMENT (PPE).jpeg", answer: "Personal Protective Equipment (PPE)", fact: "Proper PPE can reduce lab exposure incidents by more than 90%, per most biosafety guidelines." },
+    { image: "PETRI DISH.jpg", answer: "Petri Dish", fact: "Rainphil supplies petri dishes from PakGent, a staple in every microbiology lab." },
+    { image: "PIPETTE TIPS.jpg", answer: "Pipette Tips", fact: "Rainphil carries pipette tips from SSIbio / PakGent, engineered for precise, contamination-free transfers." },
+    { image: "PIPETTE.jpeg", answer: "Pipette", fact: "Rainphil supplies pipettes from Thermo Fisher Scientific and Thistle Scientific for accurate liquid handling." },
+    { image: "SERIAL DILUTION.jpg", answer: "Serial Dilution", fact: "Rainphil's SSIbio / PakGent pipette tips are built for the precision serial dilution demands." },
+    { image: "SYRINGE FILTER.webp", answer: "Syringe Filter", fact: "Syringe filters are a quick way to sterilize small volumes of liquid without heat, which matters for heat-sensitive samples." },
+    { image: "VACCUM FILTRATION.jpeg", answer: "Vacuum Filtration", fact: "Vacuum filtration speeds up separation by pulling liquid through the filter instead of relying on gravity alone." },
+    { image: "VIRUS.jpeg", answer: "Virus", fact: "Most viruses are so small that roughly 500 million of them could fit on the head of a pin." },
+    { image: "VORTEX MIXER.jpg", answer: "Vortex Mixer", fact: "Rainphil supplies vortex mixers from FINEPCR to keep your samples thoroughly and quickly mixed." },
+    { image: "ZONE OF INHIBITION.jpg", answer: "Zone of Inhibition", fact: "The clear ring around a disc shows how well an antibiotic stops bacterial growth — the bigger the zone, the more effective it is." },
+    { image: "AGAR PLATE.jpg", answer: "Agar Plate", fact: "Rainphil offers dry culture media from Biocomma used to pour agar plates like this one." },
+    { image: "ANTIBIOTIC DISC or ANTIBIOTIC SUSCEPTIBILITY TEST (Kirby–Bauer Test).jpeg", answer: "Antibiotic Disc / Kirby-Bauer Test", fact: "The Kirby-Bauer test, developed in the 1960s, is still the standard method labs use to check antibiotic effectiveness." },
+    { image: "AUTOCLAVE.jpg", answer: "Autoclave", fact: "Rainphil carries laboratory and retort autoclaves from ALP for reliable sterilization." },
+    { image: "BACTERIA.webp", answer: "Bacteria", fact: "There are more bacteria in a single gram of soil than there are people on Earth." }
+];
+
+    let gameState = "IDLE";
+    let currentItem = null;
+    let shuffleInterval = null;
+
+    const imgElement = document.getElementById("apparatus-image");
+    const placeholder = document.getElementById("placeholder-text");
+    const answerBox = document.getElementById("answer-box");
+    const answerText = document.getElementById("answer-text");
+    const funFactBox = document.getElementById("fun-fact-box");
+    const factText = document.getElementById("fact-text");
+    const actionBtn = document.getElementById("action-btn");
+    const prizeBtn = document.getElementById("prize-btn");
+
+    function handleAction() {
+        if (gameState === "IDLE" || gameState === "REVEALED") {
+            startShuffle();
+        } else if (gameState === "GUESSED") {
+            revealAnswer();
+        }
+    }
+
+    function startShuffle() {
+        gameState = "SHUFFLING";
+        actionBtn.disabled = true;
+        answerBox.classList.remove("visible");
+        funFactBox.classList.remove("visible");
+        prizeBtn.classList.remove("visible");
+        placeholder.style.display = "none";
+        imgElement.style.display = "block";
+
+        let duration = 1500;
+        let speed = 60;
+        let elapsed = 0;
+
+        shuffleInterval = setInterval(() => {
+            let tempIndex = Math.floor(Math.random() * items.length);
+            imgElement.src = items[tempIndex].image;
+            elapsed += speed;
+
+            if (elapsed >= duration) {
+                clearInterval(shuffleInterval);
+                selectFinalItem();
+            }
+        }, speed);
+    }
+
+    function selectFinalItem() {
+        const randomIndex = Math.floor(Math.random() * items.length);
+        currentItem = items[randomIndex];
+        imgElement.src = currentItem.image;
+
+        gameState = "GUESSED";
+        actionBtn.disabled = false;
+        actionBtn.textContent = "Reveal Answer";
+        answerText.textContent = "???";
+        answerBox.classList.remove("visible");
+        funFactBox.classList.remove("visible");
+    }
+
+    function revealAnswer() {
+        answerText.textContent = currentItem.answer;
+        answerBox.classList.add("visible");
+
+        if (currentItem.fact) {
+            factText.textContent = currentItem.fact;
+            funFactBox.classList.add("visible");
+        }
+
+        prizeBtn.classList.add("visible");
+
+        gameState = "REVEALED";
+        actionBtn.textContent = "Spin Again";
+    }
+
+    document.body.onkeyup = function(e) {
+        if (e.key == " " || e.code == "Space") {
+            if (document.getElementById("wheel-modal-overlay").classList.contains("open")) return;
+            e.preventDefault();
+            handleAction();
+        }
+    }
+
+    const fullscreenBtn = document.getElementById("fullscreen-btn");
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    document.addEventListener("fullscreenchange", () => {
+        fullscreenBtn.textContent = document.fullscreenElement ? "⤢" : "⛶";
+        fullscreenBtn.setAttribute("aria-label", document.fullscreenElement ? "Exit fullscreen" : "Enter fullscreen");
+    });
+
+    // =========================================================
+    // PRIZE WHEEL
+    // =========================================================
+    const defaultPrizes = [
+        "10% Off Your Order",
+        "Free Rainphil Tote Bag",
+        "Free Sample Kit",
+        "Grand Prize!",
+        "Lab Coat Pin",
+        "Try Again Next Time"
+    ];
+
+    function loadPrizes() {
+        try {
+            const saved = localStorage.getItem("petriPursuitPrizes");
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length >= 2) return parsed;
+            }
+        } catch (e) {}
+        return [...defaultPrizes];
+    }
+
+    function savePrizesToStorage() {
+        try { localStorage.setItem("petriPursuitPrizes", JSON.stringify(prizes)); }
+        catch (e) {}
+    }
+
+    let prizes = loadPrizes();
+    let wheelRotation = 0;
+    let isSpinning = false;
+
+    const wheelColors = ["#5eead4", "#ffd166", "#ff8f6b", "#f472b6", "#60a5fa", "#a78bfa"];
+
+    // Contrast logic calculations
+    function hexToRgb(hex) {
+        let h = hex.replace("#", "");
+        if (h.length === 3) h = h.split("").map(c => c + c).join("");
+        const num = parseInt(h, 16);
+        return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+    }
+
+    function relativeLuminance({ r, g, b }) {
+        const [R, G, B] = [r, g, b].map(v => {
+            v /= 255;
+            return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+    }
+
+    function getReadableTextColor(hexBg) {
+        const lum = relativeLuminance(hexToRgb(hexBg));
+        return lum > 0.45 ? "#06231d" : "#f5fbf9";
+    }
+
+    const wheelCanvas = document.getElementById("wheel-canvas");
+    const wheelCtx = wheelCanvas.getContext("2d");
+    const wheelModalOverlay = document.getElementById("wheel-modal-overlay");
+    const wheelResultEl = document.getElementById("wheel-result");
+    const prizeFieldsEl = document.getElementById("prize-fields");
+    const wheelSpinBtn = document.getElementById("wheel-spin-btn");
+
+    function setupWheelCanvas() {
+        const dpr = window.devicePixelRatio || 1;
+        const size = wheelCanvas.getBoundingClientRect().width || 280;
+        wheelCanvas.width = size * dpr;
+        wheelCanvas.height = size * dpr;
+        wheelCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return size;
+    }
+
+    function drawWheel() {
+        const displaySize = setupWheelCanvas();
+        const segCount = prizes.length;
+        const segAngle = (2 * Math.PI) / segCount;
+        const radius = displaySize / 2;
+
+        wheelCtx.clearRect(0, 0, displaySize, displaySize);
+
+        for (let i = 0; i < segCount; i++) {
+            const startAngle = -Math.PI / 2 + i * segAngle;
+            const endAngle = startAngle + segAngle;
+
+            // Draw slice background wedge
+            wheelCtx.beginPath();
+            wheelCtx.moveTo(radius, radius);
+            wheelCtx.arc(radius, radius, radius, startAngle, endAngle);
+            wheelCtx.closePath();
+            const sliceColor = wheelColors[i % wheelColors.length];
+            wheelCtx.fillStyle = sliceColor;
+            wheelCtx.fill();
+
+            // Set up context alignment transformations for label layout
+            wheelCtx.save();
+            wheelCtx.translate(radius, radius);
+            wheelCtx.rotate(startAngle + segAngle / 2);
+            wheelCtx.textAlign = "right";
+            wheelCtx.textBaseline = "middle"; 
+            wheelCtx.fillStyle = getReadableTextColor(sliceColor);
+            
+            const fontSizeConfig = segCount > 12 ? "500 11px" : "600 13px";
+            wheelCtx.font = `${fontSizeConfig} Inter, sans-serif`;
+
+            // Center alignment padding limits
+            const outerPadding = 14; 
+            const innerPadding = 34; // Safety distance keeping names clear of center hub overlay
+            const maxWidth = radius - outerPadding - innerPadding;
+
+            let label = prizes[i];
+
+            // FIXED: Dynamically cuts text off with an ellipsis based on pixel calculations
+            // completely bypasses fillText's squishing parameter so labels stay perfectly shaped.
+            if (wheelCtx.measureText(label).width > maxWidth) {
+                while (label.length > 0 && wheelCtx.measureText(label + "…").width > maxWidth) {
+                    label = label.slice(0, -1);
+                }
+                label = label.trim() + "…";
+            }
+
+            wheelCtx.fillText(label, radius - outerPadding, 0); 
+            wheelCtx.restore();
+        }
+
+        // Central hub caps masking slice intersection
+        wheelCtx.beginPath();
+        wheelCtx.arc(radius, radius, 16, 0, 2 * Math.PI);
+        wheelCtx.fillStyle = "#123028";
+        wheelCtx.strokeStyle = "rgba(94,234,212,0.5)";
+        wheelCtx.lineWidth = 3;
+        wheelCtx.fill();
+        wheelCtx.stroke();
+
+        wheelCtx.beginPath();
+        wheelCtx.arc(radius, radius, 4, 0, 2 * Math.PI);
+        wheelCtx.fillStyle = "#5eead4";
+        wheelCtx.fill();
+    }
+
+    function distributeSymmetrically(list) {
+        const n = list.length;
+        const result = new Array(n).fill(null);
+        const counts = {};
+        list.forEach(item => { counts[item] = (counts[item] || 0) + 1; });
+        
+        const sortedItems = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+        let slots = [];
+        for (let i = 0; i < n; i++) slots.push(i);
+        
+        sortedItems.forEach(item => {
+            const count = counts[item];
+            for (let i = 0; i < count; i++) {
+                const slotIndex = Math.floor((i * slots.length) / count);
+                const targetIndex = slots[slotIndex];
+                result[targetIndex] = item;
+                slots.splice(slotIndex, 1);
+            }
+        });
+        return result;
+    }
+
+    function renderPrizeEditor() {
+        prizeFieldsEl.innerHTML = "";
+        prizes.forEach((prize, idx) => {
+            const row = document.createElement("div");
+            row.className = "prize-field-row";
+
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = prize;
+            input.setAttribute("aria-label", "Prize option " + (idx + 1));
+            input.oninput = (e) => { prizes[idx] = e.target.value; };
+            
+            // Pass the index (idx) to the paste handler
+            input.addEventListener("paste", (e) => handlePrizePaste(e, idx));
+
+            const removeBtn = document.createElement("button");
+            removeBtn.type = "button";
+            removeBtn.className = "remove-field";
+            removeBtn.setAttribute("aria-label", "Remove this option");
+            removeBtn.textContent = "✕";
+            removeBtn.onclick = () => removePrizeField(idx);
+
+            row.appendChild(input);
+            row.appendChild(removeBtn);
+            prizeFieldsEl.appendChild(row);
+        });
+    }
+
+    function handlePrizePaste(e, idx) {
+        const text = (e.clipboardData || window.clipboardData).getData("text");
+        if (!text) return;
+        const lines = text.split(/\r\n|\r|\n/).map(l => l.trim()).filter(l => l.length > 0);
+        if (lines.length <= 1) return; // If it's a single line, let standard paste behavior handle it
+
+        e.preventDefault();
+        
+        // Remove the 1 item at the pasted index, and insert all the new lines there
+        prizes.splice(idx, 1, ...lines);
+        
+        // Redistribute the newly combined list symmetrically so duplicates are spread out
+        prizes = distributeSymmetrically(prizes);
+        
+        savePrizesToStorage();
+        renderPrizeEditor();
+        drawWheel();
+        wheelResultEl.textContent = "";
+    }
+
+    function addPrizeField() {
+        prizes.push("New Prize");
+        renderPrizeEditor();
+    }
+
+    function removePrizeField(idx) {
+        if (prizes.length <= 2) {
+            alert("Keep at least 2 prize options on the wheel.");
+            return;
+        }
+        prizes.splice(idx, 1);
+        renderPrizeEditor();
+    }
+
+    function saveAndRedraw() {
+        const cleaned = prizes.map(p => p.trim()).filter(p => p.length > 0);
+        if (cleaned.length >= 2) {
+            prizes = cleaned;
+        }
+        savePrizesToStorage();
+        renderPrizeEditor();
+        drawWheel();
+        wheelResultEl.textContent = "";
+    }
+
+    function openWheelModal() {
+        drawWheel();
+        renderPrizeEditor();
+        wheelModalOverlay.classList.add("open");
+    }
+
+    function closeWheelModal() {
+        wheelModalOverlay.classList.remove("open");
+    }
+
+    function handleOverlayClick(e) {
+        if (e.target === wheelModalOverlay) closeWheelModal();
+    }
+
+    function spinWheel() {
+        if (isSpinning) return;
+        isSpinning = true;
+        wheelSpinBtn.disabled = true;
+        wheelResultEl.textContent = "";
+
+        const segCount = prizes.length;
+        const segAngleDeg = 360 / segCount;
+        const winIndex = Math.floor(Math.random() * segCount);
+        const centerAngle = winIndex * segAngleDeg + segAngleDeg / 2;
+        const extraSpins = 5 + Math.floor(Math.random() * 3);
+        const targetMod = (360 - centerAngle + 360) % 360;
+        const currentMod = ((wheelRotation % 360) + 360) % 360;
+        let delta = targetMod - currentMod;
+        if (delta < 0) delta += 360;
+        wheelRotation += extraSpins * 360 + delta;
+
+        wheelCanvas.style.transition = "transform 4.2s cubic-bezier(0.15, 0.65, 0.15, 1)";
+        wheelCanvas.style.transform = `rotate(${wheelRotation}deg)`;
+
+        setTimeout(() => {
+            wheelResultEl.textContent = "🎉 " + prizes[winIndex] + "!";
+            isSpinning = false;
+            wheelSpinBtn.disabled = false;
+        }, 4300);
+    }
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && wheelModalOverlay.classList.contains("open")) {
+            closeWheelModal();
+        }
+    });
+</script>
+
+</body>
+</html>
